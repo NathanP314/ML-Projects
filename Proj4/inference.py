@@ -1,14 +1,14 @@
 import numpy
 
-def mnist_inference(data_path):
+def mnist_inference(data_path, model):
     # Placeholder for MNIST inference code
-    print(f"MNIST inference function called with data path: {data_path}")
+    print(f"MNIST inference function called with data path: {data_path} and model: {model}")
     for f in data_path:
         print(f"Processing file: {f}")
 
-def ce_inference(data_path):
+def ce_inference(data_path, model):
     # Placeholder for C. Elegans inference code
-    print(f"C. Elegans inference function called with data path: {data_path}")
+    print(f"C. Elegans inference function called with data path: {data_path} and model: {model}")
     for f in data_path:
         print(f"Processing file: {f}")
 
@@ -22,10 +22,13 @@ def main():
     print("Please enter the absolute path to the folder for inference data:")
     data_path = input().strip()
     
+    print("Please enter the absolute path to the model file:")
+    model = input().strip()
+    
     if model_choice == 'M':
-        mnist_inference(data_path)
+        mnist_inference(data_path, model)
     elif model_choice == 'CE':
-        ce_inference(data_path)
+        ce_inference(data_path, model)
             
 if __name__ == "__main__":
     main()
