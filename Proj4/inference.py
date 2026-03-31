@@ -1,16 +1,91 @@
-import numpy
+import numpy as np
+import pandas as pd
+import os
+from PIL import Image
+from ce_utils import (
+    load_single_image,
+    load_model,
+    predict_labels,
+    write_inference_excel
+)
+from mnist_logreg_idx import (
+    SoftmaxLogisticRegression,
+    preprocess_images,
+    export_predictions_to_excel
+)
 
-def mnist_inference(data_path, model):
-    # Placeholder for MNIST inference code
-    print(f"MNIST inference function called with data path: {data_path} and model: {model}")
-    for f in data_path:
-        print(f"Processing file: {f}")
 
-def ce_inference(data_path, model):
-    # Placeholder for C. Elegans inference code
-    print(f"C. Elegans inference function called with data path: {data_path} and model: {model}")
-    for f in data_path:
-        print(f"Processing file: {f}")
+def ce_inference(data_path, model_path):
+    if not os.path.isdir(data_path):
+        raise FileNotFoundError(f"Data folder not found: {data_path}")
+
+    if not os.path.isfile(model_path):
+        raise FileNotFoundError(f"Model file not found: {model_path}")
+
+    w, b, image_shape = load_model(model_path)
+
+    files = sorted([f for f in os.listdir(data_path) if f.lower().endswith(".png")])
+    if not files:
+        raise ValueError("No .png files found in the provided folder.")
+
+    X = []
+    filenames = []
+
+    for fname in files:
+        full_path = os.path.join(data_path, fname)
+        flat, shape = load_single_image(full_path, expected_shape=image_shape)
+        X.append(flat)
+        filenames.append(fname)
+
+    X = np.array(X, dtype=np.float32)
+    preds = predict_labels(X, w, b, threshold=0.5)
+
+    output_excel = os.path.join(data_path, "celegans_inference_output.xlsx")
+    write_inference_excel(output_excel, filenames, preds.tolist())
+
+    print(f"Inference complete.")
+    print(f"Excel output written to: {output_excel}")
+    
+    
+def mnist_inference(data_path, model_path):
+    if not os.path.isdir(data_path):
+        raise FileNotFoundError(f"Data folder not found: {data_path}")
+
+    if not os.path.isfile(model_path):
+        raise FileNotFoundError(f"Model file not found: {model_path}")
+    
+    model = SoftmaxLogisticRegression.load(model_path)
+    files = sorted([f for f in os.listdir(data_path) if f.lower().endswith(".tif")])
+    if not files:
+        raise ValueError("No .tif files found in the provided folder.")
+    
+    X = []
+    filenames = []
+    
+    for fname in files:
+        full_path = os.path.join(data_path, fname)
+        img = Image.open(full_path).convert("L")  # grayscale
+        img = img.resize((28, 28))  # Ensure image size is 28x28
+        img = np.array(img, dtype=np.float32)
+        if np.mean(img) > 127:
+            img = 255 - img  # invert colors if background is white
+        X.append(img)
+        filenames.append(fname)
+    
+    X = np.array(X, dtype=np.float32)
+    X = preprocess_images(X)
+    preds = model.predict(X)
+    
+    output_excel = "mnist_inference_output.xlsx"
+    df_pred = pd.DataFrame({'Filename': filenames, 'Predicted_Label': preds})
+    label_counts = pd.Series(preds).value_counts().sort_index()
+    df_count = pd.DataFrame({'Label': label_counts.index, 'Count': label_counts.values})
+    with pd.ExcelWriter(output_excel, engine='openpyxl') as writer:
+        df_pred.to_excel(writer, sheet_name='Predictions', index=False)
+        df_count.to_excel(writer, sheet_name='Label_Counts', index=False)
+
+    print("MNIST inference complete.")
+    print(f"Excel output written to: {output_excel}")
 
 def main():
     print("Would you like to test the MNIST model or C. Elegans Model? Enter 'M' or 'CE':")
