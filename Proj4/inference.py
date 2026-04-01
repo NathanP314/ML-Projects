@@ -6,12 +6,12 @@ from ce_utils import (
     load_single_image,
     load_model,
     predict_labels,
-    write_inference_excel
+    write_inference_excel,
+    standardize_transform
 )
 from mnist_logreg_idx import (
     SoftmaxLogisticRegression,
-    preprocess_images,
-    export_predictions_to_excel
+    preprocess_images
 )
 
 
@@ -22,7 +22,7 @@ def ce_inference(data_path, model_path):
     if not os.path.isfile(model_path):
         raise FileNotFoundError(f"Model file not found: {model_path}")
 
-    w, b, image_shape = load_model(model_path)
+    w, b, image_shape, mean, std = load_model(model_path)
 
     files = sorted([f for f in os.listdir(data_path) if f.lower().endswith(".png")])
     if not files:
@@ -38,6 +38,10 @@ def ce_inference(data_path, model_path):
         filenames.append(fname)
 
     X = np.array(X, dtype=np.float32)
+    if mean is not None and std is not None:
+        X = standardize_transform(X, mean, std)
+    else:
+        raise ValueError("Mean and std values are required for standardization but were not found in the model file.")
     preds = predict_labels(X, w, b, threshold=0.5)
 
     output_excel = os.path.join(data_path, "celegans_inference_output.xlsx")
@@ -107,3 +111,4 @@ def main():
             
 if __name__ == "__main__":
     main()
+    
