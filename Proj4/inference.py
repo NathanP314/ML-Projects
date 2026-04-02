@@ -15,7 +15,8 @@ from mnist_logreg_idx import (
 )
 
 
-def ce_inference(data_path, model_path):
+def ce_inference(data_path):
+    model_path = "./celegans_model.npz"
     if not os.path.isdir(data_path):
         raise FileNotFoundError(f"Data folder not found: {data_path}")
 
@@ -44,14 +45,17 @@ def ce_inference(data_path, model_path):
         raise ValueError("Mean and std values are required for standardization but were not found in the model file.")
     preds = predict_labels(X, w, b, threshold=0.5)
 
-    output_excel = os.path.join(data_path, "celegans_inference_output.xlsx")
+    filename = "celegans_inference_output.xlsx"
+    output_excel = os.path.join("./", filename)
     write_inference_excel(output_excel, filenames, preds.tolist())
 
     print(f"Inference complete.")
-    print(f"Excel output written to: {output_excel}")
+    print(f"Excel output written to: {filename}")
+    print("Note: The label counts are in the 'Label Counts' sheet of the Excel file.")
     
     
-def mnist_inference(data_path, model_path):
+def mnist_inference(data_path):
+    model_path = "./mnist_softmax_model.npz"
     if not os.path.isdir(data_path):
         raise FileNotFoundError(f"Data folder not found: {data_path}")
 
@@ -90,6 +94,7 @@ def mnist_inference(data_path, model_path):
 
     print("MNIST inference complete.")
     print(f"Excel output written to: {output_excel}")
+    print("Note: The label counts are in the 'Label Counts' sheet of the Excel file.")
 
 def main():
     print("Would you like to test the MNIST model or C. Elegans Model? Enter 'M' or 'CE':")
@@ -101,13 +106,10 @@ def main():
     print("Please enter the absolute path to the folder for inference data:")
     data_path = input().strip()
     
-    print("Please enter the absolute path to the model file:")
-    model = input().strip()
-    
     if model_choice == 'M':
-        mnist_inference(data_path, model)
+        mnist_inference(data_path)
     elif model_choice == 'CE':
-        ce_inference(data_path, model)
+        ce_inference(data_path)
             
 if __name__ == "__main__":
     main()
